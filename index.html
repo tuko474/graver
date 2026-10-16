@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Конструктор наград</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Forum&family=Golos+Text:wght@400;500;600&family=Russo+One&family=Montserrat:wght@900&family=Oswald:wght@500;600&display=swap">
+<style>
+/* Layout: витрина слева (3D-изделие на тёмном подиуме + цена), панель настройки справа; на телефоне — стопкой */
+:root {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --fg: #141a24;
+  --muted: #5b6676;
+  --line: #d8dee7;
+  --accent: #1f4fa8;
+  --accent-soft: #e4ecfa;
+  --on-accent: #ffffff;
+  --stage-a: #1a2333;
+  --stage-b: #3b4b66;
+  --stage-fg: #e9eef7;
+  --good: #1d7a4e;
+  --font-display: "Forum", "Times New Roman", Georgia, serif;
+  --font-body: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1118; --surface: #151b25; --fg: #e6ebf3; --muted: #9aa6b8; --line: #263041;
+    --accent: #84a9ff; --accent-soft: #1b2741; --on-accent: #0d1118;
+    --stage-a: #070a10; --stage-b: #1c2638; --stage-fg: #e9eef7; --good: #5fcf98;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1118; --surface: #151b25; --fg: #e6ebf3; --muted: #9aa6b8; --line: #263041;
+  --accent: #84a9ff; --accent-soft: #1b2741; --on-accent: #0d1118;
+  --stage-a: #070a10; --stage-b: #1c2638; --stage-fg: #e9eef7; --good: #5fcf98;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 40px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 20px; }
+header { display: grid; gap: 4px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(30px, 4.4vw, 46px); line-height: 1.05; margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 62ch; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.show { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); display: grid; gap: 12px; min-width: 0; }
+@media (max-width: 860px) { .show { position: static; } }
+.stage {
+  position: relative; border-radius: var(--r); overflow: hidden; aspect-ratio: 1 / 1; max-width: 100%;
+  background: radial-gradient(120% 90% at 50% 25%, var(--stage-b), var(--stage-a) 70%);
+  color: var(--stage-fg); touch-action: none;
+}
+@media (max-width: 860px) { .stage { aspect-ratio: 4 / 4.2; } }
+.stage canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.stage canvas:active { cursor: grabbing; }
+.views { position: absolute; left: 12px; right: 12px; bottom: 38px; display: flex; flex-wrap: wrap; gap: 6px; }
+.stage-hint {
+  position: absolute; left: 14px; bottom: 12px; font-size: 12px; opacity: .78; pointer-events: none;
+}
+.stage-tools { position: absolute; right: 12px; top: 12px; display: flex; gap: 6px; }
+.chip-btn {
+  font: 500 12px var(--font-body); color: var(--stage-fg); background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.22); border-radius: 999px; padding: 6px 11px; cursor: pointer;
+}
+.chip-btn:hover { background: rgba(255,255,255,.18); }
+.chip-btn:focus-visible { outline: 2px solid var(--stage-fg); outline-offset: 2px; }
+.stage-label {
+  position: absolute; left: 14px; top: 12px; font-family: var(--font-display); font-size: 20px; letter-spacing: .01em;
+}
+.stage-label small { display: block; font-family: var(--font-body); font-size: 12px; opacity: .75; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; opacity: .8; }
+
+.price {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px;
+  display: grid; gap: 10px;
+}
+.price-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.total { font-family: var(--font-display); font-size: 36px; line-height: 1; font-variant-numeric: tabular-nums; }
+.per { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+details summary { cursor: pointer; color: var(--accent); font-weight: 500; font-size: 14px; }
+details summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.rows { display: grid; gap: 6px; margin-top: 10px; font-size: 14px; }
+.row { display: flex; justify-content: space-between; gap: 12px; }
+.row span:last-child { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.row.sub { border-top: 1px solid var(--line); padding-top: 6px; font-weight: 600; }
+.row.disc span:last-child { color: var(--good); }
+.meta { font-size: 13px; color: var(--muted); }
+
+.panel {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 20px; display: grid; gap: 22px; min-width: 0;
+}
+fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; min-width: 0; }
+legend, .lbl { font-weight: 600; font-size: 14px; padding: 0; margin-bottom: 2px; }
+.hint { font-size: 13px; color: var(--muted); margin: -4px 0 0; }
+
+.seg { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label {
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 13px; cursor: pointer;
+  font-size: 14px; background: var(--bg); transition: border-color .15s, background .15s;
+  display: grid; gap: 1px; min-width: 0;
+}
+.seg label small { color: var(--muted); font-size: 12px; }
+.seg input:checked + label { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+.shapes label { flex: 1 1 96px; text-align: center; padding: 10px 8px; }
+.shape-ico { width: 34px; height: 40px; margin: 0 auto 4px; display: block; }
+.shape-ico path { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
+
+.face { display: grid; gap: 6px; }
+.face-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; }
+.face-head select { font: 13px var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+textarea, input[type="text"], input[type="tel"], input[type="number"] {
+  width: 100%; font: 15px var(--font-body); color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+}
+textarea { resize: vertical; min-height: 92px; line-height: 1.4; }
+textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+
+.file-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn {
+  font: 500 14px var(--font-body); border-radius: 10px; padding: 10px 16px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+}
+.btn:hover { border-color: var(--accent); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); width: 100%; padding: 13px 16px; font-size: 15px; }
+.btn.primary:hover { filter: brightness(1.06); }
+.file-name { font-size: 13px; color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+#logoInput { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+.qty { display: flex; align-items: center; gap: 8px; }
+.qty input { width: 96px; text-align: center; font-variant-numeric: tabular-nums; }
+.qty .btn { width: 42px; padding: 9px 0; font-size: 18px; line-height: 1; }
+.tiers { font-size: 13px; color: var(--muted); }
+.tiers b { color: var(--fg); font-weight: 600; }
+
+.order { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 20px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 480px) { .two { grid-template-columns: 1fr; } }
+.done {
+  border: 1px solid var(--good); border-radius: 10px; padding: 12px 14px; font-size: 14px;
+  background: var(--accent-soft);
+}
+.done b { color: var(--good); }
+
+footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Демо · наградная продукция из стекла и акрила</span>
+    <h1>Конструктор наград</h1>
+    <p class="lede">Выберите изделие, впишите текст для каждой грани и добавьте логотип — гравировка появится на модели в 3D, а стоимость пересчитается сразу.</p>
+  </header>
+
+  <div class="grid">
+    <section class="show" aria-label="Просмотр изделия и стоимость">
+      <div class="stage" id="stage">
+        <div class="loading" id="loading">Загружаю 3D-просмотр…</div>
+        <div class="stage-label" id="stageLabel">Брусок<small>акрил · 50×100×25 мм</small></div>
+        <div class="stage-tools">
+          <button class="chip-btn" id="spinBtn" type="button" aria-pressed="true">Вращение: вкл</button>
+          
+        </div>
+        <div class="views" role="group" aria-label="Ракурс">
+          <button class="chip-btn" type="button" data-view="front">Спереди</button>
+          <button class="chip-btn" type="button" data-view="side">Сбоку</button>
+          <button class="chip-btn" type="button" data-view="top">Сверху</button>
+          <button class="chip-btn" type="button" data-view="bottom">Снизу</button>
+        </div>
+        <div class="stage-hint">Потяните, чтобы повернуть · колесо или два пальца — приблизить</div>
+      </div>
+
+      <div class="price" aria-live="polite">
+        <div class="price-top">
+          <div class="total" id="total">—</div>
+          <div class="per" id="per">—</div>
+        </div>
+        <details>
+          <summary>Из чего складывается цена</summary>
+          <div class="rows" id="rows"></div>
+        </details>
+        <div class="meta" id="meta">Изготовление 3–5 рабочих дней</div>
+      </div>
+    </section>
+
+    <form class="panel" id="form" novalidate>
+      <fieldset>
+        <legend>Форма</legend>
+        <div class="seg shapes">
+          <input type="radio" name="shape" id="shape-brusok" value="brusok" checked>
+          <label for="shape-brusok"><svg class="shape-ico" viewBox="0 0 34 40" aria-hidden="true"><path d="M8 38V6h12l6 4v28zM20 6v32M8 6l6-3h12l-6 3"/></svg>Брусок</label>
+          <input type="radio" name="shape" id="shape-crystal" value="crystal">
+          <label for="shape-crystal"><svg class="shape-ico" viewBox="0 0 34 40" aria-hidden="true"><path d="M10 38h14l4-17-9-18-11 3-5 14z"/></svg>Кристалл</label>
+          <input type="radio" name="shape" id="shape-star" value="star">
+          <label for="shape-star"><svg class="shape-ico" viewBox="0 0 34 40" aria-hidden="true"><path d="M17 4l4 10 11 1-8 7 2 11-9-6-9 6 2-11-8-7 11-1z"/></svg>Звезда</label>
+          <input type="radio" name="shape" id="shape-wave" value="wave">
+          <label for="shape-wave"><svg class="shape-ico" viewBox="0 0 34 40" aria-hidden="true"><path d="M10 38h14c2-12-9-17-1-35-10 8-17 20-13 35z"/></svg>Волна</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Материал</legend>
+        <div class="seg">
+          <input type="radio" name="material" id="mat-glass" value="glass">
+          <label for="mat-glass">Оптическое стекло<small>тяжёлое, с игрой света</small></label>
+          <input type="radio" name="material" id="mat-acryl" value="acryl" checked>
+          <label for="mat-acryl">Акрил<small>лёгкий, дешевле</small></label>
+        </div>
+      </fieldset>
+
+      <fieldset id="fsSize">
+        <legend>Размер</legend>
+        <p class="hint" style="margin:0">50 × 100 × 25 мм, кромки в полировку, гравировка глубиной 1 мм</p>
+      </fieldset>
+
+      <fieldset id="fsHeight" hidden>
+        <legend>Высота</legend>
+        <div class="seg">
+          <input type="radio" name="height" id="h15" value="15"><label for="h15">15 см</label>
+          <input type="radio" name="height" id="h20" value="20" checked><label for="h20">20 см</label>
+          <input type="radio" name="height" id="h25" value="25"><label for="h25">25 см</label>
+          <input type="radio" name="height" id="h30" value="30"><label for="h30">30 см</label>
+        </div>
+      </fieldset>
+
+      <fieldset id="fsThick" hidden>
+        <legend>Толщина</legend>
+        <div class="seg">
+          <input type="radio" name="thick" id="t15" value="15" checked><label for="t15">15 мм</label>
+          <input type="radio" name="thick" id="t20" value="20"><label for="t20">20 мм</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Подставка</legend>
+        <div class="seg">
+          <input type="radio" name="base" id="b-black" value="black"><label for="b-black">Чёрное стекло</label>
+          <input type="radio" name="base" id="b-wood" value="wood"><label for="b-wood">Дерево</label>
+          <input type="radio" name="base" id="b-none" value="none" checked><label for="b-none">Без подставки</label>
+        </div>
+      </fieldset>
+
+      <fieldset id="fsFaces">
+        <span class="lbl">Гравировка по граням</span>
+        <div class="face">
+          <div class="face-head"><label for="fFront">Лицевая грань</label><select id="fFrontFont" aria-label="Шрифт"><option value="russo" selected>Russo One</option><option value="mont">Montserrat Black</option><option value="oswald">Oswald</option></select></div>
+          <textarea id="fFront" rows="4" maxlength="160">ИВАНОВ
+ИВАН ИВАНОВИЧ
+5 ЛЕТ
+ВЕТЕРАН ТРУДА</textarea>
+        </div>
+        <div class="face">
+          <div class="face-head"><label for="fSide">Боковые грани</label><select id="fSideFont" aria-label="Шрифт"><option value="russo">Russo One</option><option value="mont" selected>Montserrat Black</option><option value="oswald">Oswald</option></select></div>
+          <input type="text" id="fSide" maxlength="40" value="НАЗВАНИЕ КОМПАНИИ">
+          <label class="check"><input type="checkbox" id="fSideBoth" checked> На обеих боковых гранях</label>
+        </div>
+        <div class="face">
+          <div class="face-head"><label for="fTop">Верхняя грань</label><select id="fTopFont" aria-label="Шрифт"><option value="russo">Russo One</option><option value="mont">Montserrat Black</option><option value="oswald" selected>Oswald</option></select></div>
+          <textarea id="fTop" rows="2" maxlength="80">2026
+САНКТ-ПЕТЕРБУРГ</textarea>
+        </div>
+        <div class="face">
+          <div class="face-head"><label for="fBottom">Дно</label><select id="fBottomFont" aria-label="Шрифт"><option value="russo">Russo One</option><option value="mont" selected>Montserrat Black</option><option value="oswald">Oswald</option></select></div>
+          <input type="text" id="fBottom" maxlength="40" value="КАДРОВЫЙ РЕЗЕРВ">
+          <p class="hint" style="margin:0">Наносится зеркально: сверху сквозь акрил читается прямо. Посмотрите ракурс «Снизу».</p>
+        </div>
+      </fieldset>
+
+      <fieldset id="fsEngrave" hidden>
+        <label class="lbl" for="engrave">Гравировка</label>
+        <p class="hint">До 4 строк. Каждая новая строка — с новой строки.</p>
+        <textarea id="engrave" rows="4" maxlength="160">Лучший сотрудник
+2026 года
+Иванов Иван Иванович</textarea>
+      </fieldset>
+
+      <fieldset>
+        <span class="lbl">Логотип</span>
+        <p class="hint">PNG с прозрачным фоном смотрится лучше всего.</p>
+        <div class="file-row">
+          <input type="file" id="logoInput" accept="image/png,image/jpeg,image/svg+xml,image/webp">
+          <label class="btn" for="logoInput" id="logoLabel">Загрузить логотип</label>
+          <button class="btn" type="button" id="logoClear" hidden>Убрать</button>
+          <span class="file-name" id="logoName">Не загружен</span>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <label class="lbl" for="qty">Тираж</label>
+        <div class="qty">
+          <button class="btn" type="button" id="qtyMinus" aria-label="Меньше">−</button>
+          <input type="number" id="qty" min="1" max="999" value="10" inputmode="numeric">
+          <button class="btn" type="button" id="qtyPlus" aria-label="Больше">+</button>
+          <span class="meta">шт.</span>
+        </div>
+        <div class="tiers">Скидка за тираж: <b>от 10 шт.</b> −7% · <b>от 25</b> −12% · <b>от 50</b> −18%</div>
+      </fieldset>
+
+      <div class="order">
+        <span class="lbl">Заявка на изготовление</span>
+        <div class="two">
+          <input type="text" id="name" placeholder="Имя или компания" autocomplete="name" aria-label="Имя или компания">
+          <input type="tel" id="phone" placeholder="Телефон или e-mail" autocomplete="tel" aria-label="Телефон или e-mail">
+        </div>
+        <button class="btn primary" type="submit" id="submitBtn">Отправить заявку</button>
+        <div class="done" id="done" hidden></div>
+      </div>
+    </form>
+  </div>
+
+  <footer>
+    <span>Цены, формы и сроки в демо условные — подставим ваш ассортимент, 3D-модели и формулу расчёта.</span>
+    <span>Разработка: Владимир</span>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const rub = n => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const state = { shape: 'brusok', material: 'acryl', height: 20, thick: 15, base: 'none', text: $('engrave').value, logo: null, logoName: '', qty: 10 };
+  const faces = {
+    front: { el: 'fFront', font: 'fFrontFont' }, side: { el: 'fSide', font: 'fSideFont' },
+    top: { el: 'fTop', font: 'fTopFont' }, bottom: { el: 'fBottom', font: 'fBottomFont' }
+  };
+  const faceText = k => $(faces[k].el).value;
+  const faceFont = k => $(faces[k].font).value;
+  const sideBoth = () => $('fSideBoth').checked;
+  const fontStr = (key, size) => key === 'russo' ? `${size}px "Russo One", Impact, sans-serif`
+    : key === 'mont' ? `900 ${size}px "Montserrat", "Arial Black", sans-serif` : `600 ${size}px "Oswald", "Arial Narrow", sans-serif`;
+  const linesOf = t => t.split('\n').map(x => x.trim()).filter(Boolean).slice(0, 4);
+  /* текст по строкам: каждая строка вписывается в ширину, но не крупнее общего предела */
+  function drawLines(ctx, lines, x, y, w, h, key) {
+    if (!lines.length) return;
+    const maxS = h / (lines.length * 1.18);
+    const sizes = lines.map(l => { ctx.font = fontStr(key, 100); const k = (w * 0.94) / Math.max(1, ctx.measureText(l).width); return Math.min(maxS, 100 * k); });
+    const total = sizes.reduce((a, b) => a + b * 1.18, 0);
+    let cy = y + (h - total) / 2;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    lines.forEach((l, i) => { const sz = sizes[i]; ctx.font = fontStr(key, sz); ctx.fillText(l, x + w / 2, cy + sz * 0.62); cy += sz * 1.18; });
+  }
+  function frost(ctx) { ctx.fillStyle = 'rgba(246,250,255,0.95)'; ctx.shadowColor = 'rgba(255,255,255,0.5)'; ctx.shadowBlur = 5; }
+
+  /* ---------- Формы: контур в единичной высоте (y от 0 до 1) ---------- */
+  const SHAPES = {
+    brusok: { name: 'Брусок', size: '50×100×25 мм', price: { acryl: 1900, glass: 3900 } },
+    crystal: {
+      name: 'Кристалл',
+      make() {
+        const s = new THREE.Shape();
+        const p = [[-0.24, 0], [0.24, 0], [0.38, 0.52], [0.10, 1.0], [-0.22, 0.90], [-0.38, 0.42]];
+        s.moveTo(p[0][0], p[0][1]); p.slice(1).forEach(q => s.lineTo(q[0], q[1])); s.closePath(); return s;
+      },
+      area: { cx: 0, cy: 0.47, w: 0.52, h: 0.46 },
+      price: { glass: 3600, acryl: 1600 }
+    },
+    star: {
+      name: 'Звезда',
+      make() {
+        const s = new THREE.Shape(); const cy = 0.5, R = 0.5, r = 0.21;
+        for (let i = 0; i < 10; i++) {
+          const a = Math.PI / 2 + i * Math.PI / 5, rad = i % 2 ? r : R;
+          const x = Math.cos(a) * rad, y = cy + Math.sin(a) * rad;
+          i ? s.lineTo(x, y) : s.moveTo(x, y);
+        }
+        s.closePath(); return s;
+      },
+      area: { cx: 0, cy: 0.47, w: 0.36, h: 0.30 },
+      price: { glass: 3200, acryl: 1400 }
+    },
+    wave: {
+      name: 'Волна',
+      make() {
+        const s = new THREE.Shape();
+        s.moveTo(-0.20, 0); s.lineTo(0.20, 0);
+        s.bezierCurveTo(0.30, 0.34, 0.02, 0.56, 0.16, 1.0);
+        s.bezierCurveTo(-0.14, 0.80, -0.34, 0.50, -0.20, 0);
+        return s;
+      },
+      area: { cx: -0.02, cy: 0.36, w: 0.34, h: 0.40 },
+      price: { glass: 3400, acryl: 1500 }
+    }
+  };
+  const HEIGHT_K = { 15: 1, 20: 1.35, 25: 1.8, 30: 2.3 };
+  const BASE = { black: { name: 'подставка из чёрного стекла', price: 450 }, wood: { name: 'деревянная подставка', price: 650 }, none: { name: 'без подставки', price: 0 } };
+  const MAT = { glass: 'оптическое стекло', acryl: 'акрил' };
+
+  /* ---------- Цена ---------- */
+  function calc() {
+    const sh = SHAPES[state.shape];
+    const isBar = state.shape === 'brusok';
+    const item = isBar ? sh.price[state.material] : sh.price[state.material] * HEIGHT_K[state.height];
+    const thick = !isBar && state.thick === 20 ? item * 0.15 : 0;
+    let engrave = 0, faceList = [];
+    if (isBar) {
+      if (faceText('front').trim()) { engrave += 500; faceList.push('лицо'); }
+      if (faceText('side').trim()) { const n = sideBoth() ? 2 : 1; engrave += 250 * n; faceList.push(n === 2 ? '2 бока' : 'бок'); }
+      if (faceText('top').trim()) { engrave += 250; faceList.push('верх'); }
+      if (faceText('bottom').trim()) { engrave += 250; faceList.push('дно'); }
+    } else if (state.text.trim()) engrave = state.material === 'glass' ? 600 : 400;
+    const hasText = engrave > 0;
+    const logo = state.logo ? 700 : 0;
+    const base = BASE[state.base].price;
+    const unit = item + thick + engrave + logo + base;
+    const q = Math.max(1, state.qty | 0);
+    const d = q >= 50 ? 0.18 : q >= 25 ? 0.12 : q >= 10 ? 0.07 : 0;
+    const subtotal = unit * q, discount = subtotal * d, total = subtotal - discount;
+    return { sh, isBar, faceList, item, thick, engrave, logo, base, unit, q, d, subtotal, discount, total, hasText };
+  }
+  function renderPrice() {
+    const c = calc();
+    $('total').textContent = rub(c.total);
+    $('per').textContent = rub(c.total / c.q) + ' за шт. · ' + c.q + ' шт.';
+    const rows = [
+      [c.isBar ? `Брусок ${c.sh.size}, ${MAT[state.material]}` : `«${c.sh.name}», ${MAT[state.material]}, ${state.height} см`, rub(c.item)],
+      c.thick ? ['Толщина 20 мм', '+' + rub(c.thick)] : null,
+      c.engrave ? [c.isBar ? 'Гравировка: ' + c.faceList.join(', ') : 'Лазерная гравировка текста', '+' + rub(c.engrave)] : null,
+      c.logo ? ['Нанесение логотипа', '+' + rub(c.logo)] : null,
+      c.base ? [BASE[state.base].name[0].toUpperCase() + BASE[state.base].name.slice(1), '+' + rub(c.base)] : null,
+      ['За одно изделие', rub(c.unit), 'sub'],
+      ['Тираж ' + c.q + ' шт.', rub(c.subtotal)],
+      c.d ? ['Скидка за тираж ' + Math.round(c.d * 100) + '%', '−' + rub(c.discount), 'disc'] : null,
+      ['Итого', rub(c.total), 'sub']
+    ].filter(Boolean);
+    $('rows').innerHTML = rows.map(r => `<div class="row ${r[2] || ''}"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('');
+    const days = c.q >= 50 ? '7–10' : c.q >= 25 ? '5–7' : '3–5';
+    $('meta').textContent = 'Изготовление ' + days + ' рабочих дней';
+    $('stageLabel').innerHTML = `${c.sh.name}<small>${MAT[state.material]} · ${c.isBar ? c.sh.size : state.height + ' см'}</small>`;
+  }
+
+  /* ---------- Гравировка на canvas ---------- */
+  const engraveCanvas = document.createElement('canvas');
+  function drawEngraving() {
+    if (state.shape === 'brusok') { drawBar(); return; }
+    const a = SHAPES[state.shape].area;
+    const W = 1024, H = Math.round(W * a.h / a.w);
+    engraveCanvas.width = W; engraveCanvas.height = H;
+    const ctx = engraveCanvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(245,249,255,0.94)';
+    ctx.shadowColor = 'rgba(255,255,255,0.55)'; ctx.shadowBlur = 6;
+    let top = H * 0.04;
+    if (state.logo) {
+      const img = state.logo, boxH = H * 0.34, boxW = W * 0.6;
+      const k = Math.min(boxW / img.width, boxH / img.height);
+      const w = img.width * k, h = img.height * k;
+      ctx.globalAlpha = 0.92;
+      ctx.drawImage(img, (W - w) / 2, top + (boxH - h) / 2, w, h);
+      ctx.globalAlpha = 1;
+      top += boxH + H * 0.05;
+    }
+    const lines = state.text.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 4);
+    if (lines.length) {
+      const avail = H - top - H * 0.04;
+      let size = Math.min(avail / (lines.length * 1.25), H * 0.2);
+      const family = '"Forum", "Times New Roman", Georgia, serif';
+      ctx.font = `${size}px ${family}`;
+      const widest = Math.max(...lines.map(l => ctx.measureText(l).width));
+      if (widest > W * 0.92) size *= (W * 0.92) / widest;
+      ctx.font = `${size}px ${family}`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const block = lines.length * size * 1.25;
+      let y = top + (avail - block) / 2 + size * 0.62;
+      lines.forEach(l => { ctx.fillText(l, W / 2, y); y += size * 1.25; });
+    }
+    if (engraveTex) engraveTex.needsUpdate = true;
+  }
+
+  /* ---------- Брусок: текстуры граней (20 px на мм) ---------- */
+  const PX = 20, bar = {};
+  function faceCanvas(key, wmm, hmm) {
+    if (!bar[key]) { const c = document.createElement('canvas'); bar[key] = { canvas: c, tex: null }; }
+    const c = bar[key].canvas; c.width = wmm * PX; c.height = hmm * PX;
+    const ctx = c.getContext('2d'); ctx.clearRect(0, 0, c.width, c.height); frost(ctx); return ctx;
+  }
+  function drawBar() {
+    // лицо 44×90 мм: логотип сверху, затем строки
+    let ctx = faceCanvas('front', 44, 90); const W = 44 * PX, H = 90 * PX; let top = 0;
+    if (state.logo) {
+      const img = state.logo, bh = H * 0.24, bw = W * 0.7, k = Math.min(bw / img.width, bh / img.height);
+      ctx.globalAlpha = 0.92; ctx.drawImage(img, (W - img.width * k) / 2, (bh - img.height * k) / 2, img.width * k, img.height * k); ctx.globalAlpha = 1;
+      top = bh + H * 0.04;
+    }
+    drawLines(ctx, linesOf(faceText('front')), 0, top, W, H - top, faceFont('front'));
+    // бока 23×90 мм, текст вдоль высоты (читается снизу вверх)
+    ctx = faceCanvas('side', 23, 90);
+    ctx.save(); ctx.translate(23 * PX / 2, 90 * PX / 2); ctx.rotate(-Math.PI / 2);
+    drawLines(ctx, linesOf(faceText('side')), -45 * PX, -11.5 * PX, 90 * PX, 23 * PX, faceFont('side')); ctx.restore();
+    // верх 46×21 мм
+    ctx = faceCanvas('top', 46, 21); drawLines(ctx, linesOf(faceText('top')), 0, 0, 46 * PX, 21 * PX, faceFont('top'));
+    // дно 46×21 мм — рисуем «как видно сверху», снизу оно читается зеркально
+    ctx = faceCanvas('bottom', 46, 21); drawLines(ctx, linesOf(faceText('bottom')), 0, 0, 46 * PX, 21 * PX, faceFont('bottom'));
+    Object.values(bar).forEach(f => { if (f.tex) f.tex.needsUpdate = true; });
+  }
+  function barPlane(key, w, h) {
+    const f = bar[key];
+    f.tex = new THREE.CanvasTexture(f.canvas); f.tex.encoding = THREE.sRGBEncoding; f.tex.anisotropy = 4;
+    return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: f.tex, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+  }
+  function buildBar(g) {
+    drawBar();
+    const isGlass = state.material === 'glass';
+    const geo = new THREE.BoxGeometry(0.5, 1, 0.25); geo.translate(0, 0.5, 0);
+    const mat = new THREE.MeshPhysicalMaterial({ color: isGlass ? 0xe6f1ff : 0xdbeaff, metalness: 0, roughness: 0.04, clearcoat: 1, clearcoatRoughness: 0.03, transparent: true, opacity: isGlass ? 0.32 : 0.26, envMapIntensity: 1.5 });
+    const body = new THREE.Mesh(geo, mat);
+    body.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 })));
+    g.add(body);
+    const e = 0.002;
+    const front = barPlane('front', 0.44, 0.9); front.position.set(0, 0.5, 0.125 + e); g.add(front);
+    if (faceText('side').trim()) {
+      const r = barPlane('side', 0.23, 0.9); r.rotation.y = Math.PI / 2; r.position.set(0.25 + e, 0.5, 0); g.add(r);
+      if (sideBoth()) { const l = new THREE.Mesh(r.geometry, r.material); l.rotation.y = -Math.PI / 2; l.position.set(-0.25 - e, 0.5, 0); g.add(l); }
+    }
+    const t = barPlane('top', 0.46, 0.21); t.rotation.x = -Math.PI / 2; t.position.set(0, 1 + e, 0); g.add(t);
+    const b = barPlane('bottom', 0.46, 0.21); b.rotation.x = -Math.PI / 2; b.position.set(0, -e, 0); g.add(b);
+    return { width: 0.5, H: 1 };
+  }
+
+  /* ---------- 3D ---------- */
+  let renderer, scene, camera, controls, group, engraveTex, spinning = !reduce, envMap;
+  const stage = $('stage');
+
+  function makeEnv() {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const env = new THREE.Scene();
+    env.background = new THREE.Color(0x2a3446);
+    const panel = (w, h, x, y, z, ry, c) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
+      m.position.set(x, y, z); m.rotation.y = ry; env.add(m);
+    };
+    panel(6, 3, 0, 4, -6, 0, 0xffffff);
+    panel(3, 6, -6, 1, 0, Math.PI / 2, 0xdfe8ff);
+    panel(3, 6, 6, 1, 0, -Math.PI / 2, 0xfff3e2);
+    panel(8, 2, 0, -3, 5, Math.PI, 0x8fa4c8);
+    const top = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
+    top.position.y = 8; top.rotation.x = Math.PI / 2; env.add(top);
+    envMap = pmrem.fromScene(env, 0.02).texture;
+    pmrem.dispose();
+  }
+
+  function init3D() {
+    if (!window.THREE || !THREE.OrbitControls) { $('loading').textContent = '3D-просмотр не загрузился. Обновите страницу.'; return false; }
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    stage.prepend(renderer.domElement);
+    renderer.domElement.setAttribute('aria-label', 'Трёхмерная модель награды');
+    renderer.domElement.setAttribute('role', 'img');
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = false;
+    controls.minDistance = 1.2; controls.maxDistance = 14;
+    controls.autoRotate = spinning; controls.autoRotateSpeed = 1.6;
+    controls.addEventListener('start', () => setSpin(false));
+    makeEnv();
+    scene.environment = envMap;
+    scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+    const key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(3, 5, 4); scene.add(key);
+    const rim = new THREE.DirectionalLight(0xbfd2ff, 0.7); rim.position.set(-4, 2, -3); scene.add(rim);
+    const resize = () => {
+      const w = stage.clientWidth, h = stage.clientHeight;
+      if (!w || !h) return;
+      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    };
+    new ResizeObserver(resize).observe(stage); resize();
+    $('loading').remove();
+    (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+    return true;
+  }
+
+  function disposeGroup() {
+    if (!group) return;
+    group.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material !== undefined) { (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); } });
+    scene.remove(group);
+  }
+
+  function makeBase(bw, bd, baseH) {
+    const bmat = state.base === 'wood'
+      ? new THREE.MeshStandardMaterial({ color: 0x7a4d2b, roughness: 0.62, metalness: 0 })
+      : new THREE.MeshPhysicalMaterial({ color: 0x0b0d12, roughness: 0.18, metalness: 0.1, clearcoat: 1, envMapIntensity: 1.3 });
+    const base = new THREE.Mesh(new THREE.BoxGeometry(bw, baseH, bd), bmat);
+    base.position.y = -baseH / 2; return base;
+  }
+  function frameCamera(H) {
+    const dist = state.shape === 'brusok' ? 2.7 : 2.3 + H * 1.9;
+    const dir = camera.position.lengthSq() ? camera.position.clone().normalize() : new THREE.Vector3(0.25, 0.12, 1).normalize();
+    camera.position.copy(dir.multiplyScalar(dist));
+    controls.target.set(0, 0, 0); controls.update();
+  }
+
+  function buildAward(reframe) {
+    if (!renderer) return;
+    disposeGroup();
+    group = new THREE.Group();
+    if (state.shape === 'brusok') {
+      const r = buildBar(group);
+      let baseH = 0;
+      if (state.base !== 'none') { baseH = 0.32; group.add(makeBase(0.85, 0.55, baseH)); }
+      group.position.y = -(r.H - baseH) / 2; scene.add(group);
+      if (reframe) frameCamera(r.H);
+      return;
+    }
+    const sh = SHAPES[state.shape];
+    const H = state.height / 10;
+    const depth = (state.thick / 10) / state.height;
+    const geo = new THREE.ExtrudeGeometry(sh.make(), { depth, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.01, bevelSegments: 3, curveSegments: 28 });
+    geo.translate(0, 0, -depth / 2);
+    geo.computeBoundingBox();
+    const isGlass = state.material === 'glass';
+    const mat = new THREE.MeshPhysicalMaterial({
+      color: isGlass ? 0xe6f1ff : 0xd2e6ff, metalness: 0, roughness: isGlass ? 0.03 : 0.08,
+      clearcoat: 1, clearcoatRoughness: 0.03, transparent: true, opacity: isGlass ? 0.42 : 0.52,
+      envMapIntensity: isGlass ? 1.6 : 1.1, reflectivity: 0.9
+    });
+    const award = new THREE.Mesh(geo, mat);
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: isGlass ? 0.42 : 0.3 }));
+    award.add(edges);
+
+    drawEngraving();
+    if (engraveTex) engraveTex.dispose();
+    engraveTex = new THREE.CanvasTexture(engraveCanvas);
+    engraveTex.encoding = THREE.sRGBEncoding;
+    engraveTex.anisotropy = 4;
+    const a = sh.area;
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(a.w, a.h), new THREE.MeshBasicMaterial({ map: engraveTex, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+    plane.position.set(a.cx, a.cy, depth / 2 + 0.013);
+    award.add(plane);
+    award.scale.set(H, H, H);
+    group.add(award);
+
+    let baseH = 0;
+    if (state.base !== 'none') {
+      baseH = 0.32;
+      const bb = geo.boundingBox;
+      const bw = Math.max((bb.max.x - bb.min.x) * H * 0.9, 0.85);
+      const bd = Math.max(state.thick / 100 * 3.2, 0.55);
+      group.add(makeBase(bw, bd, baseH));
+    }
+    group.position.y = -(H - baseH) / 2;
+    scene.add(group);
+    if (reframe) frameCamera(H);
+  }
+
+  function setSpin(on) {
+    spinning = on; if (controls) controls.autoRotate = on;
+    const b = $('spinBtn'); b.setAttribute('aria-pressed', String(on)); b.textContent = 'Вращение: ' + (on ? 'вкл' : 'выкл');
+  }
+
+  /* ---------- Управление ---------- */
+  const form = $('form');
+  form.addEventListener('change', e => {
+    const t = e.target;
+    if (t.name === 'shape') { state.shape = t.value; toggleFields(); buildAward(true); }
+    else if (t.name === 'material') { state.material = t.value; buildAward(false); }
+    else if (t.name === 'height') { state.height = +t.value; buildAward(true); }
+    else if (t.name === 'thick') { state.thick = +t.value; buildAward(false); }
+    else if (t.name === 'base') { state.base = t.value; buildAward(false); }
+    renderPrice();
+  });
+  function toggleFields() {
+    const isBar = state.shape === 'brusok';
+    $('fsSize').hidden = !isBar; $('fsFaces').hidden = !isBar;
+    $('fsHeight').hidden = isBar; $('fsThick').hidden = isBar; $('fsEngrave').hidden = isBar;
+  }
+  ['fFront', 'fSide', 'fTop', 'fBottom'].forEach(id => $(id).addEventListener('input', () => {
+    if (id === 'fSide') buildAward(false); else drawBar();
+    renderPrice();
+  }));
+  ['fFrontFont', 'fSideFont', 'fTopFont', 'fBottomFont'].forEach(id => $(id).addEventListener('change', e => { e.stopPropagation(); drawBar(); }));
+  $('fSideBoth').addEventListener('change', e => { e.stopPropagation(); buildAward(false); renderPrice(); });
+  $('engrave').addEventListener('input', e => { state.text = e.target.value; drawEngraving(); renderPrice(); });
+  const setQty = v => { state.qty = Math.min(999, Math.max(1, v | 0 || 1)); $('qty').value = state.qty; renderPrice(); };
+  $('qty').addEventListener('input', e => { const v = parseInt(e.target.value, 10); if (v > 0) { state.qty = Math.min(999, v); renderPrice(); } });
+  $('qty').addEventListener('blur', e => setQty(parseInt(e.target.value, 10)));
+  $('qtyMinus').addEventListener('click', () => setQty(state.qty - 1));
+  $('qtyPlus').addEventListener('click', () => setQty(state.qty + 1));
+
+  $('logoInput').addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      const img = new Image();
+      img.onload = () => { state.logo = img; state.logoName = f.name; $('logoName').textContent = f.name; $('logoClear').hidden = false; $('logoLabel').textContent = 'Заменить'; drawEngraving(); renderPrice(); };
+      img.onerror = () => { $('logoName').textContent = 'Не удалось открыть файл. Попробуйте PNG или JPG.'; };
+      img.src = r.result;
+    };
+    r.readAsDataURL(f);
+  });
+  $('logoClear').addEventListener('click', () => {
+    state.logo = null; $('logoInput').value = ''; $('logoName').textContent = 'Не загружен'; $('logoClear').hidden = true; $('logoLabel').textContent = 'Загрузить логотип';
+    drawEngraving(); renderPrice();
+  });
+
+  $('spinBtn').addEventListener('click', () => setSpin(!spinning));
+  const VIEWS = { front: [0, 0.08, 1], side: [1, 0.08, 0.12], top: [0.02, 1, 0.12], bottom: [0.02, -1, 0.12] };
+  document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => {
+    if (!camera) return; setSpin(false);
+    const v = VIEWS[b.dataset.view]; camera.position.set(v[0], v[1], v[2]).normalize();
+    frameCamera(state.shape === 'brusok' ? 1 : state.height / 10);
+  }));
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = $('name').value.trim(), phone = $('phone').value.trim(), done = $('done');
+    if (!name || !phone) {
+      done.hidden = false; done.innerHTML = 'Укажите имя и контакт, чтобы мы могли подтвердить заказ.';
+      (name ? $('phone') : $('name')).focus(); return;
+    }
+    const c = calc();
+    done.hidden = false;
+    done.innerHTML = `<b>Заявка сформирована.</b> «${c.sh.name}», ${MAT[state.material]}, ${c.isBar ? c.sh.size : state.height + ' см'}, ${c.q} шт. — ${rub(c.total)}. В рабочей версии она уйдёт вам на почту вместе с макетом гравировки.`;
+  });
+
+  /* ---------- Старт ---------- */
+  renderPrice();
+  const start = () => { if (init3D()) buildAward(true); };
+  if (document.fonts && document.fonts.load) {
+    Promise.all(['40px "Forum"', '40px "Russo One"', '900 40px "Montserrat"', '600 40px "Oswald"'].map(f => document.fonts.load(f).catch(() => {})))
+      .finally(() => { start(); });
+  } else start();
+})();
+</script>
+
+</body>
+</html>
