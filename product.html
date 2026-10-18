@@ -120,6 +120,7 @@ textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 
 .btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); width: 100%; padding: 13px 16px; font-size: 15px; }
 .btn.primary:hover { filter: brightness(1.06); }
 .file-name { font-size: 13px; color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+.lib-link { display: inline-block; margin-top: 10px; font-size: 14px; font-weight: 500; }
 #logoInput { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 
 .qty { display: flex; align-items: center; gap: 8px; }
@@ -151,6 +152,7 @@ textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 
     <nav class="nav" aria-label="Разделы">
       <a href="index.html#catalog">Каталог</a>
       <a href="product.html?p=brusok" id="navCons">3D-конструктор</a>
+      <a href="library.html">Символы</a>
       <a href="index.html#how">Как заказать</a>
       <a href="#contacts">Контакты</a>
     </nav>
@@ -324,6 +326,7 @@ textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 
           <button class="btn" type="button" id="logoClear" hidden>Убрать</button>
           <span class="file-name" id="logoName">Не загружен</span>
         </div>
+        <a class="lib-link" id="libLink" href="library.html">Или выберите символ из библиотеки →</a>
       </fieldset>
 
       <fieldset>
@@ -360,6 +363,7 @@ textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 
 </footer>
 
 <script src="catalog.js"></script>
+<script src="symbols.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
@@ -817,6 +821,20 @@ textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 
       if (pr.text) { state.text = pr.text; $('engrave').value = pr.text; }
       toggleFields();
     }
+    if (product.shape) $('libLink').href = 'library.html?for=' + encodeURIComponent(product.id);
+  }
+
+  /* ---------- Символ из библиотеки (?sym=) ---------- */
+  const symId = new URLSearchParams(location.search).get('sym');
+  const symItem = symId && window.LIB ? LIB.load().items.find(x => x.id === symId) : null;
+  if (symItem && hasConstructor) {
+    const img = new Image();
+    img.onload = () => {
+      state.logo = img; state.logoName = symItem.name;
+      $('logoName').textContent = 'Символ: ' + symItem.name; $('logoClear').hidden = false; $('logoLabel').textContent = 'Заменить';
+      drawEngraving(); renderPrice();
+    };
+    img.src = LIB.imageSrc(symItem, '#f5f9ff');
   }
   if (!hasConstructor) {
     document.querySelector('.grid').hidden = true; $('consHead').hidden = true; $('custom').hidden = false;

@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Символы для гравировки · Мастерская наград</title>
+<meta name="description" content="Библиотека символов и логотипов для гравировки: разделы, поиск и перенос на награду в 3D-конструкторе.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Forum&family=Golos+Text:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+<style>
+/* Библиотека символов: дерево разделов слева, сетка справа, панель управления по кнопке */
+.page-head { padding-top: 28px; display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: end; justify-content: space-between; }
+.page-head h1 { font-size: clamp(32px, 4.6vw, 48px); margin: 6px 0 8px; }
+.page-head p { margin: 0; color: var(--muted); max-width: 62ch; }
+.admin-toggle {
+  font: 500 14px var(--font-body); display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 10px; padding: 10px 14px;
+}
+.admin-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.admin-toggle[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.admin-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.for-banner {
+  margin-top: 18px; background: var(--accent-soft); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; align-items: center; font-size: 14px;
+}
+
+.lib { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 22px; margin-top: 22px; align-items: start; }
+@media (max-width: 820px) { .lib { grid-template-columns: minmax(0, 1fr); gap: 14px; } }
+
+/* Дерево разделов */
+.tree-box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); position: sticky; top: 78px; max-height: calc(100vh - 96px); overflow: auto; }
+@media (max-width: 820px) { .tree-box { position: static; max-height: none; } }
+.tree-box summary { list-style: none; cursor: pointer; padding: 12px 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tree-box summary::-webkit-details-marker { display: none; }
+.tree-box summary small { font-weight: 400; color: var(--muted); font-size: 13px; }
+.tree-box summary::after { content: ""; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); margin-top: -4px; transition: transform .15s; }
+.tree-box[open] summary::after { transform: rotate(-135deg); margin-top: 4px; }
+@media (min-width: 821px) { .tree-box summary { pointer-events: none; } .tree-box summary::after { display: none; } }
+.tree { padding: 0 8px 10px; }
+.tree ul { list-style: none; margin: 0; padding: 0; }
+.node { display: flex; align-items: center; gap: 2px; padding-left: calc(var(--d, 0) * 16px); border-radius: 8px; }
+.node.drop { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.caret, .caret-sp { width: 26px; height: 30px; flex: none; }
+.caret { border: 0; background: none; color: var(--muted); cursor: pointer; border-radius: 6px; display: grid; place-items: center; }
+.caret svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.2; transition: transform .15s; }
+.caret[aria-expanded="true"] svg { transform: rotate(90deg); }
+.caret:focus-visible, .node-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.node-btn {
+  flex: 1; min-width: 0; text-align: left; font: 400 14px var(--font-body); color: var(--fg); background: none; border: 0;
+  padding: 6px 8px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; align-items: baseline;
+}
+.node-btn span:first-child { overflow-wrap: anywhere; }
+.node-btn:hover { background: var(--bg); }
+.node-btn[aria-current="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.cnt { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 400; }
+
+/* Правая часть */
+.panel { display: grid; gap: 14px; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.crumbs { font-size: 14px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline; }
+.crumbs button { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; }
+.crumbs b { color: var(--fg); font-weight: 600; }
+.search { position: relative; flex: 0 1 260px; min-width: 180px; }
+.search input {
+  width: 100%; font: 400 14px var(--font-body); color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 10px; padding: 9px 12px 9px 34px;
+}
+.search input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.search svg { position: absolute; left: 11px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); fill: none; stroke: var(--muted); stroke-width: 2; }
+@media (max-width: 520px) { .search { flex: 1 1 100%; } }
+
+.subchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.subchips button {
+  font: 500 13px var(--font-body); color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 7px 13px; cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline;
+}
+.subchips button:hover { border-color: var(--accent); }
+.subchips button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+@media (max-width: 520px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+.tile { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; display: grid; grid-template-rows: auto 1fr; transition: border-color .15s, transform .15s; }
+.tile:hover { border-color: var(--accent); }
+.tile.dragging { opacity: .45; }
+.tile-open { all: unset; cursor: pointer; display: grid; grid-template-rows: auto 1fr; }
+.tile-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: var(--r); }
+.art { aspect-ratio: 1; background: radial-gradient(120% 100% at 50% 20%, var(--stage-b), var(--stage-a) 70%); color: var(--stage-fg); display: grid; place-items: center; }
+.art svg { width: 60%; height: 60%; }
+.art img { width: 74%; height: 74%; object-fit: contain; }
+.tile-body { padding: 9px 11px 11px; display: grid; gap: 2px; align-content: start; }
+.tile-body b { font-size: 14px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.tile-body small { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.tile-tools { display: none; gap: 6px; padding: 0 11px 11px; flex-wrap: wrap; }
+.admin .tile-tools { display: flex; }
+.tile-tools select { flex: 1 1 100%; width: 100%; min-width: 0; font: 400 13px var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+.mini {
+  flex: 1; font: 500 12px var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px 8px; cursor: pointer;
+}
+.mini { min-width: 0; flex: 1 1 100%; }
+.mini:hover { border-color: var(--accent); }
+.mini.danger:hover { border-color: #c0392b; color: #c0392b; }
+.mini:focus-visible, .tile-tools select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.empty { border: 1px dashed var(--line); border-radius: var(--r); padding: 28px 18px; text-align: center; color: var(--muted); }
+.count-line { font-size: 13px; color: var(--muted); margin: 0; }
+
+/* Панель управления */
+.admin-box { display: none; background: var(--surface); border: 1px solid var(--accent); border-radius: var(--r); padding: 16px; gap: 14px; }
+.admin .admin-box { display: grid; }
+.admin-box h2 { font-family: var(--font-body); font-size: 16px; font-weight: 600; line-height: 1.3; }
+.admin-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.admin-row label { font-size: 13px; color: var(--muted); flex: 1 1 100%; }
+.admin-row input[type="text"] {
+  flex: 1 1 200px; min-width: 0; font: 400 14px var(--font-body); color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px;
+}
+.admin-row input[type="text"]:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.btn {
+  font: 500 14px var(--font-body); border-radius: 10px; padding: 9px 14px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--bg); color: var(--fg); white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.btn.danger { color: #c0392b; }
+:root[data-theme="dark"] .btn.danger { color: #ff8a7a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.danger { color: #ff8a7a; } }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.drop-zone {
+  border: 2px dashed var(--line); border-radius: var(--r); padding: 18px; text-align: center; color: var(--muted); font-size: 14px;
+  display: grid; gap: 10px; justify-items: center; transition: border-color .15s, background .15s;
+}
+.drop-zone.over { border-color: var(--accent); background: var(--accent-soft); }
+#fileInput { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.admin-note { font-size: 13px; color: var(--muted); margin: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: space-between; align-items: center; }
+.linkish { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+.toast {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--fg); color: var(--bg); font-size: 14px;
+  padding: 10px 16px; border-radius: 10px; z-index: 50; max-width: calc(100vw - 32px); box-shadow: 0 6px 24px rgba(0,0,0,.25);
+}
+
+/* Карточка символа */
+dialog.sym {
+  border: 1px solid var(--line); border-radius: 16px; padding: 0; background: var(--surface); color: var(--fg);
+  width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px);
+}
+dialog.sym::backdrop { background: rgba(8, 11, 18, .55); }
+.sym-inner { display: grid; grid-template-columns: 200px minmax(0, 1fr); }
+.sym-inner .art { aspect-ratio: auto; min-height: 200px; }
+@media (max-width: 520px) { .sym-inner { grid-template-columns: minmax(0, 1fr); } .sym-inner .art { aspect-ratio: 16 / 10; } }
+.sym-body { padding: 18px; display: grid; gap: 10px; align-content: start; }
+.sym-body h2 { font-size: 28px; }
+.sym-body small { color: var(--muted); font-size: 13px; }
+.sym-body p { margin: 0; font-size: 14px; color: var(--muted); }
+.uses { display: grid; gap: 6px; }
+.uses a {
+  display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--fg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 6px 10px 6px 6px; font-size: 14px; font-weight: 500;
+}
+.uses a:hover { border-color: var(--accent); }
+.uses a.main { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.uses img { width: 36px; height: 36px; object-fit: cover; border-radius: 6px; flex: none; }
+.uses a span { margin-left: auto; font-size: 13px; opacity: .8; white-space: nowrap; padding-left: 8px; }
+.close-x { position: absolute; right: 10px; top: 10px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(10,14,22,.6); color: #fff; font-size: 20px; line-height: 1; cursor: pointer; }
+.close-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="container">
+    <a class="brand" href="index.html" aria-label="Мастерская наград — на главную">
+      <svg viewBox="0 0 30 34" aria-hidden="true"><path d="M15 2l5 11 8 2-6 7 1 10-8-4-8 4 1-10-6-7 8-2z"/></svg>
+      <span><b>Мастерская наград</b><small>стекло · акрил · гравировка</small></span>
+    </a>
+    <nav class="nav" aria-label="Разделы">
+      <a href="index.html#catalog">Каталог</a>
+      <a href="product.html?p=brusok">3D-конструктор</a>
+      <a href="library.html" aria-current="page">Символы</a>
+      <a href="index.html#how">Как заказать</a>
+      <a href="#contacts">Контакты</a>
+    </nav>
+    <a class="head-cta" href="product.html?p=brusok">Собрать награду</a>
+  </div>
+</header>
+
+<main class="container" id="app">
+  <div class="page-head">
+    <div>
+      <span class="eyebrow">Библиотека для гравировки</span>
+      <h1>Символы и логотипы</h1>
+      <p>Выберите символ — он сразу появится на награде в 3D-конструкторе. Разделы вложены друг в друга, меню собирается из них само.</p>
+    </div>
+    <button class="admin-toggle" type="button" id="adminToggle" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+      Панель управления
+    </button>
+  </div>
+
+  <div class="for-banner" id="forBanner" hidden></div>
+
+  <div class="lib">
+    <details class="tree-box" id="treeBox" open>
+      <summary>Разделы <small id="treeSummary"></small></summary>
+      <nav class="tree" id="tree" aria-label="Разделы библиотеки"></nav>
+    </details>
+
+    <div class="panel">
+      <section class="admin-box" id="adminBox" aria-labelledby="adminTitle">
+        <h2 id="adminTitle">Управление разделом «<span id="admName"></span>»</h2>
+
+        <div class="admin-row" id="renameRow">
+          <label for="renameInput">Название раздела</label>
+          <input type="text" id="renameInput" maxlength="60">
+          <button class="btn" type="button" id="renameBtn">Переименовать</button>
+          <button class="btn danger" type="button" id="deleteBtn">Удалить раздел</button>
+        </div>
+
+        <div class="admin-row">
+          <label for="newInput" id="newLabel">Новый подраздел</label>
+          <input type="text" id="newInput" maxlength="60" placeholder="Например: Баскетбол">
+          <button class="btn primary" type="button" id="addBtn">Добавить</button>
+        </div>
+
+        <div class="drop-zone" id="dropZone">
+          <span id="dropText">Перетащите сюда картинки или выберите файлы — они попадут в этот раздел</span>
+          <input type="file" id="fileInput" accept="image/png,image/jpeg,image/svg+xml,image/webp" multiple>
+          <label class="btn primary" for="fileInput" id="fileLabel">Загрузить картинки</label>
+        </div>
+
+        <p class="admin-note">
+          <span>Картинки можно перетаскивать на разделы слева. В демо изменения видны только в этом браузере, в рабочей версии они сохраняются на сервере и сразу видны покупателям.</span>
+          <button class="linkish" type="button" id="resetBtn">Вернуть пример</button>
+        </p>
+      </section>
+
+      <div class="toolbar">
+        <div class="crumbs" id="crumbs" aria-label="Путь"></div>
+        <label class="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          <input type="search" id="search" placeholder="Поиск по названию" aria-label="Поиск символа">
+        </label>
+      </div>
+      <div class="subchips" id="subchips"></div>
+      <p class="count-line" id="countLine" aria-live="polite"></p>
+      <div class="grid" id="grid"></div>
+    </div>
+  </div>
+</main>
+
+<dialog class="sym" id="symDlg" aria-labelledby="symName">
+  <div class="sym-inner">
+    <div class="art" id="symArt"></div>
+    <div class="sym-body">
+      <small id="symPath"></small>
+      <h2 id="symName"></h2>
+      <p>Нанести на изделие — откроется 3D-конструктор с этим символом:</p>
+      <div class="uses" id="symUses"></div>
+    </div>
+  </div>
+  <button class="close-x" type="button" id="symClose" aria-label="Закрыть">×</button>
+</dialog>
+
+<footer class="site-foot" id="contacts">
+  <div class="container">
+    <div><b>Мастерская наград</b><p>Награды, стелы и бруски из стекла и акрила с лазерной гравировкой.</p></div>
+    <div><b>Связаться</b><p>Телефон и почта — в рабочей версии</p><p>Пн–Пт, 9:00–18:00</p></div>
+    <div><b>Демо-версия</b><p class="demo-note">Символы нарисованы для примера. Подставим ваши макеты, логотипы и разделы.</p></div>
+  </div>
+</footer>
+
+<script src="catalog.js"></script>
+<script src="symbols.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const params = new URLSearchParams(location.search);
+  const forId = params.get('for');
+  const forProduct = (window.CATALOG || []).find(p => p.id === forId && p.shape);
+
+  let data = LIB.load();
+  let current = 'all';
+  let query = '';
+  const expanded = new Set();
+  const narrow = matchMedia('(max-width: 820px)');
+
+  /* ---------- Данные ---------- */
+  const sec = id => data.sections.find(s => s.id === id);
+  const children = pid => data.sections.filter(s => (s.parent || null) === pid);
+  function descendants(id) {
+    const out = new Set([id]);
+    let grew = true;
+    while (grew) { grew = false; data.sections.forEach(s => { if (s.parent && out.has(s.parent) && !out.has(s.id)) { out.add(s.id); grew = true; } }); }
+    return out;
+  }
+  function pathOf(id) {
+    const out = []; let s = sec(id), guard = 0;
+    while (s && guard++ < 50) { out.unshift(s); s = s.parent ? sec(s.parent) : null; }
+    return out;
+  }
+  const countIn = id => { const d = descendants(id); return data.items.filter(i => d.has(i.section)).length; };
+  const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  function persist() {
+    if (!LIB.save(data)) toast('Хранилище браузера заполнено. В рабочей версии картинки хранятся на сервере, без этого ограничения.');
+  }
+  let toastTimer;
+  function toast(msg) {
+    let t = document.querySelector('.toast');
+    if (!t) { t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
+  }
+
+  /* ---------- Дерево ---------- */
+  const chevron = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4"/></svg>';
+  function nodeHTML(s, depth) {
+    const kids = children(s.id), open = expanded.has(s.id);
+    const caret = kids.length
+      ? `<button class="caret" type="button" data-toggle="${s.id}" aria-expanded="${open}" aria-label="${open ? 'Свернуть' : 'Развернуть'} «${esc(s.name)}»">${chevron}</button>`
+      : '<span class="caret-sp"></span>';
+    return `<li><div class="node" style="--d:${depth}" data-drop="${s.id}">${caret}<button class="node-btn" type="button" data-sec="${s.id}" aria-current="${current === s.id}"><span>${esc(s.name)}</span><span class="cnt">${countIn(s.id)}</span></button></div>`
+      + (kids.length && open ? `<ul>${kids.map(k => nodeHTML(k, depth + 1)).join('')}</ul>` : '') + '</li>';
+  }
+  function renderTree() {
+    $('tree').innerHTML = `<ul><li><div class="node" style="--d:0"><span class="caret-sp"></span><button class="node-btn" type="button" data-sec="all" aria-current="${current === 'all'}"><span>Все символы</span><span class="cnt">${data.items.length}</span></button></div></li>`
+      + children(null).map(s => nodeHTML(s, 0)).join('') + '</ul>';
+    $('treeSummary').textContent = current === 'all' ? 'все' : (sec(current) || {}).name || '';
+  }
+
+  /* ---------- Сетка ---------- */
+  function artHTML(item) { return item.src ? `<img src="${esc(item.src)}" alt="">` : LIB.svgMarkup(item); }
+  function sectionOptions(selected) {
+    const out = [];
+    (function walk(pid, depth) { children(pid).forEach(s => { out.push(`<option value="${s.id}"${s.id === selected ? ' selected' : ''}>${'— '.repeat(depth)}${esc(s.name)}</option>`); walk(s.id, depth + 1); }); })(null, 0);
+    return out.join('');
+  }
+  function renderGrid() {
+    const q = query.trim().toLowerCase();
+    let list;
+    if (q) list = data.items.filter(i => i.name.toLowerCase().includes(q));
+    else if (current === 'all') list = data.items;
+    else { const d = descendants(current); list = data.items.filter(i => d.has(i.section)); }
+
+    const pathLabel = i => pathOf(i.section).map(s => s.name).join(' › ');
+    $('grid').innerHTML = list.map(i => `
+      <article class="tile" data-item="${i.id}">
+        <button class="tile-open" type="button" data-open="${i.id}" aria-label="${esc(i.name)}: открыть">
+          <div class="art">${artHTML(i)}</div>
+          <div class="tile-body"><b>${esc(i.name)}</b>${(q || i.section !== current) ? `<small>${esc(pathLabel(i))}</small>` : ''}</div>
+        </button>
+        <div class="tile-tools">
+          <select data-move="${i.id}" aria-label="Перенести «${esc(i.name)}» в раздел">${sectionOptions(i.section)}</select>
+          <button class="mini" type="button" data-rename="${i.id}">Переименовать</button>
+          <button class="mini danger" type="button" data-del="${i.id}">Удалить</button>
+        </div>
+      </article>`).join('');
+
+    const empty = !list.length;
+    if (empty) {
+      $('grid').innerHTML = `<div class="empty" style="grid-column:1/-1">${q ? 'Ничего не нашлось. Попробуйте другое слово.' : (document.body.classList.contains('admin') ? 'В этом разделе пока нет картинок — загрузите первые в панели выше.' : 'В этом разделе пока нет картинок.')}</div>`;
+    }
+    $('countLine').textContent = q ? `Найдено: ${list.length}` : `${list.length} ${plural(list.length, 'символ', 'символа', 'символов')}`;
+    document.querySelectorAll('.tile').forEach(t => { t.draggable = document.body.classList.contains('admin'); });
+  }
+  function plural(n, a, b, c) { const m = n % 100, k = n % 10; if (m > 10 && m < 20) return c; if (k === 1) return a; if (k > 1 && k < 5) return b; return c; }
+
+  function renderCrumbs() {
+    const parts = ['<button type="button" data-sec="all">Все символы</button>'];
+    if (current !== 'all') {
+      const p = pathOf(current);
+      p.forEach((s, i) => parts.push(i === p.length - 1 ? `<b>${esc(s.name)}</b>` : `<button type="button" data-sec="${s.id}">${esc(s.name)}</button>`));
+    } else parts[0] = '<b>Все символы</b>';
+    $('crumbs').innerHTML = parts.join('<span aria-hidden="true">›</span>');
+    const kids = children(current === 'all' ? null : current);
+    $('subchips').innerHTML = query ? '' : kids.map(s => `<button type="button" data-sec="${s.id}">${esc(s.name)} <span class="cnt">${countIn(s.id)}</span></button>`).join('');
+  }
+
+  function renderAdmin() {
+    const isAll = current === 'all', s = sec(current);
+    $('admName').textContent = isAll ? 'Все символы' : s.name;
+    $('renameRow').hidden = isAll;
+    if (!isAll) $('renameInput').value = s.name;
+    $('newLabel').textContent = isAll ? 'Новый раздел верхнего уровня' : `Новый подраздел внутри «${s.name}»`;
+    $('fileInput').disabled = isAll;
+    $('fileLabel').classList.toggle('disabled', isAll);
+    $('fileLabel').style.opacity = isAll ? '.5' : '';
+    $('dropText').textContent = isAll ? 'Чтобы загрузить картинки, выберите раздел слева' : `Перетащите сюда картинки или выберите файлы — они попадут в «${s.name}»`;
+  }
+
+  function render() { renderTree(); renderCrumbs(); renderGrid(); renderAdmin(); }
+
+  function select(id) {
+    if (id !== 'all' && !sec(id)) id = 'all';
+    current = id; query = ''; $('search').value = '';
+    if (id !== 'all') { pathOf(id).forEach(s => expanded.add(s.id)); }
+    render();
+    if (narrow.matches) { $('treeBox').open = false; }
+  }
+
+  /* ---------- События навигации ---------- */
+  document.addEventListener('click', e => {
+    const t = e.target.closest('[data-toggle]');
+    if (t) { const id = t.dataset.toggle; expanded.has(id) ? expanded.delete(id) : expanded.add(id); renderTree(); return; }
+    const s = e.target.closest('[data-sec]');
+    if (s) { select(s.dataset.sec); return; }
+    const o = e.target.closest('[data-open]');
+    if (o) { openItem(o.dataset.open); return; }
+    const r = e.target.closest('[data-rename]');
+    if (r) { renameItem(r.dataset.rename); return; }
+    const d = e.target.closest('[data-del]');
+    if (d) { deleteItem(d.dataset.del); }
+  });
+  $('search').addEventListener('input', e => { query = e.target.value; renderCrumbs(); renderGrid(); });
+
+  /* ---------- Карточка символа ---------- */
+  const dlg = $('symDlg');
+  function openItem(id) {
+    const it = data.items.find(i => i.id === id); if (!it) return;
+    $('symArt').innerHTML = artHTML(it);
+    $('symName').textContent = it.name;
+    $('symPath').textContent = pathOf(it.section).map(s => s.name).join(' › ');
+    const prods = (window.CATALOG || []).filter(p => p.shape);
+    const seen = new Set(), pick = [];
+    if (forProduct) { pick.push(forProduct); seen.add(forProduct.shape); }
+    prods.forEach(p => { if (!seen.has(p.shape)) { seen.add(p.shape); pick.push(p); } });
+    $('symUses').innerHTML = pick.map((p, i) => `<a class="${i === 0 && forProduct ? 'main' : ''}" href="product.html?p=${p.id}&sym=${encodeURIComponent(it.id)}"><img src="${p.img}" alt="">${esc(p.name)}<span>${i === 0 && forProduct ? 'Вернуться →' : 'Открыть →'}</span></a>`).join('');
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  }
+  $('symClose').addEventListener('click', () => dlg.close ? dlg.close() : dlg.removeAttribute('open'));
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+
+  if (forProduct) {
+    const b = $('forBanner'); b.hidden = false;
+    b.innerHTML = `<span>Выбираете символ для «<b>${esc(forProduct.name)}</b>». Нажмите на картинку — и она появится на награде.</span><a href="product.html?p=${forProduct.id}">← Вернуться в конструктор</a>`;
+  }
+
+  /* ---------- Панель управления ---------- */
+  function setAdmin(on) {
+    document.body.classList.toggle('admin', on);
+    $('adminToggle').setAttribute('aria-pressed', String(on));
+    try { sessionStorage.setItem('graver-admin', on ? '1' : ''); } catch (e) { /* ничего */ }
+    renderGrid();
+  }
+  $('adminToggle').addEventListener('click', () => setAdmin(!document.body.classList.contains('admin')));
+
+  $('addBtn').addEventListener('click', () => {
+    const name = $('newInput').value.trim();
+    if (!name) { $('newInput').focus(); return; }
+    const s = { id: uid('c'), name, parent: current === 'all' ? null : current };
+    data.sections.push(s); persist(); $('newInput').value = '';
+    if (s.parent) expanded.add(s.parent);
+    render(); toast(`Раздел «${name}» добавлен`);
+  });
+  $('newInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('addBtn').click(); });
+
+  $('renameBtn').addEventListener('click', () => {
+    const s = sec(current), name = $('renameInput').value.trim();
+    if (!s || !name) return;
+    s.name = name; persist(); render(); toast('Раздел переименован');
+  });
+  $('renameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('renameBtn').click(); });
+
+  $('deleteBtn').addEventListener('click', () => {
+    const s = sec(current); if (!s) return;
+    const parent = s.parent ? sec(s.parent) : null;
+    const own = data.items.filter(i => i.section === s.id).length, kids = children(s.id).length;
+    let msg = `Удалить раздел «${s.name}»?`;
+    if (parent) msg += (own || kids) ? ` Его картинки и подразделы переедут в «${parent.name}».` : '';
+    else msg += own ? ` ${own} ${plural(own, 'картинка', 'картинки', 'картинок')} из него будут удалены, подразделы станут разделами верхнего уровня.` : (kids ? ' Подразделы станут разделами верхнего уровня.' : '');
+    if (!confirm(msg)) return;
+    data.items = parent ? data.items.map(i => i.section === s.id ? Object.assign(i, { section: parent.id }) : i) : data.items.filter(i => i.section !== s.id);
+    data.sections.forEach(c => { if (c.parent === s.id) c.parent = s.parent || null; });
+    data.sections = data.sections.filter(c => c.id !== s.id);
+    persist(); select(parent ? parent.id : 'all'); toast('Раздел удалён');
+  });
+
+  $('resetBtn').addEventListener('click', () => {
+    if (!confirm('Вернуть исходный пример? Ваши разделы и загруженные картинки будут удалены.')) return;
+    data = LIB.reset(); expanded.clear(); select('all'); toast('Пример восстановлен');
+  });
+
+  function renameItem(id) {
+    const it = data.items.find(i => i.id === id); if (!it) return;
+    const name = prompt('Название картинки', it.name);
+    if (name && name.trim()) { it.name = name.trim(); persist(); renderGrid(); }
+  }
+  function deleteItem(id) {
+    const it = data.items.find(i => i.id === id); if (!it) return;
+    if (!confirm(`Удалить «${it.name}»?`)) return;
+    data.items = data.items.filter(i => i.id !== id); persist(); render();
+  }
+  function moveItem(id, to) {
+    const it = data.items.find(i => i.id === id), s = sec(to);
+    if (!it || !s || it.section === to) return;
+    it.section = to; persist(); render(); toast(`«${it.name}» перенесена в «${s.name}»`);
+  }
+  document.addEventListener('change', e => { const m = e.target.closest('[data-move]'); if (m) moveItem(m.dataset.move, m.value); });
+
+  /* Загрузка картинок: уменьшаем до 480 px, чтобы поместились в хранилище демо */
+  function readImage(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onerror = reject;
+      r.onload = () => {
+        if (file.type === 'image/svg+xml') { resolve(r.result); return; }
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = () => {
+          const k = Math.min(1, 480 / Math.max(img.width, img.height));
+          const c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          resolve(file.type === 'image/jpeg' ? c.toDataURL('image/jpeg', 0.85) : c.toDataURL('image/png'));
+        };
+        img.src = r.result;
+      };
+      r.readAsDataURL(file);
+    });
+  }
+  async function addFiles(files) {
+    if (current === 'all') { toast('Сначала выберите раздел слева'); return; }
+    const list = [...files].filter(f => /^image\/(png|jpeg|svg\+xml|webp)$/.test(f.type));
+    if (!list.length) { toast('Подойдут PNG, JPG, SVG или WebP'); return; }
+    let ok = 0;
+    for (const f of list) {
+      try {
+        const src = await readImage(f);
+        data.items.push({ id: uid('u'), name: f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim() || 'Картинка', section: current, src });
+        ok++;
+      } catch (e) { /* пропускаем битый файл */ }
+    }
+    persist(); render();
+    toast(ok ? `Добавлено: ${ok} ${plural(ok, 'картинка', 'картинки', 'картинок')}` : 'Не удалось открыть файлы');
+  }
+  $('fileInput').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+  const dz = $('dropZone');
+  ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); dz.classList.add('over'); } }));
+  ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, () => dz.classList.remove('over')));
+  dz.addEventListener('drop', e => { if (e.dataTransfer.files.length) { e.preventDefault(); addFiles(e.dataTransfer.files); } });
+
+  /* Перетаскивание картинки на раздел в дереве */
+  let dragId = null;
+  document.addEventListener('dragstart', e => {
+    const t = e.target.closest && e.target.closest('.tile'); if (!t || !document.body.classList.contains('admin')) return;
+    dragId = t.dataset.item; t.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId);
+  });
+  document.addEventListener('dragend', () => { dragId = null; document.querySelectorAll('.dragging,.node.drop').forEach(x => x.classList.remove('dragging', 'drop')); });
+  $('tree').addEventListener('dragover', e => {
+    const n = e.target.closest('[data-drop]'); if (!dragId || !n) return;
+    e.preventDefault(); document.querySelectorAll('.node.drop').forEach(x => x !== n && x.classList.remove('drop')); n.classList.add('drop');
+  });
+  $('tree').addEventListener('drop', e => {
+    const n = e.target.closest('[data-drop]'); if (!dragId || !n) return;
+    e.preventDefault(); n.classList.remove('drop'); moveItem(dragId, n.dataset.drop);
+  });
+
+  /* ---------- Старт ---------- */
+  if (narrow.matches) $('treeBox').open = false;
+  let startAdmin = params.get('admin') === '1';
+  try { startAdmin = startAdmin || sessionStorage.getItem('graver-admin') === '1'; } catch (e) { /* ничего */ }
+  const startSec = params.get('s');
+  select(startSec || 'all');
+  if (startAdmin) setAdmin(true);
+})();
+</script>
+</body>
+</html>
